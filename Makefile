@@ -55,7 +55,6 @@ USER_CFLAGS = -g \
 	      -D_FILE_OFFSET_BITS=64 \
 	      -I$(CLANG_BUILTIN_INCLUDE) \
               -I$(LIBBPF_SYSTEM_INCLUDE) \
-	      //-I$(LINUX_KERNEL_INCLUDE) \ -> must delete
               -Wall \
 	      -Wno-unused-variable
 

@@ -17,11 +17,12 @@ struct event {
 
 static struct kprobe_execve_bpf *skel;
 
-static int handle_event(void *ctx, void *data, size_t data_len)
+//static int handle_event(void *ctx, void *data, size_t data_len)
+static void handle_event(void *ctx, int cpu, void *data, unsigned int data_len)
 {
-    const struct event *e = data;
+    const struct event *e = (const struct event *)data;
     printf("PID: %d, COMM: %s, FILENAME: %s\n", e->pid, e->comm, e->filename);
-    return 0;
+    //return 0;
 }
 
 static void sig_handler(int sig)
@@ -37,6 +38,7 @@ int main(int argc, char **argv)
 {
     int err;
     struct perf_buffer *pb = NULL;
+    
 
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
@@ -66,7 +68,7 @@ int main(int argc, char **argv)
 
     // Perf buffer를 사용하여 이벤트 수신 설정
     // ringbuf 사용 시:
-    pb = perf_buffer__new(bpf_map__fd(skel->maps.events), 64, handle_event);
+    pb = perf_buffer__new(bpf_map__fd(skel->maps.events), 64, handle_event, NULL, NULL, NULL);
     if (!pb) {
         fprintf(stderr, "Failed to create perf buffer: %s\n", strerror(errno));
         kprobe_execve_bpf__destroy(skel);
