@@ -39,7 +39,7 @@ VMLINUX_HDR = vmlinux.h
 
 # BPF_CFLAGS for the eBPF program (uses BPF-specific target and defines)
 # -I$(CURDIR)는 vmlinux.h를 찾기 위함
-BPF_CFLAGS = -g -target bpf -D__KERNEL__ $(ARCH_HDR_DEFINE) \
+BPF_CFLAGS = -g -O2 -target bpf -D__KERNEL__ $(ARCH_HDR_DEFINE) \
 	     -I$(CLANG_BUILTIN_INCLUDE) \
              -I$(LIBBPF_SYSTEM_INCLUDE) \
 	     -I$(LINUX_KERNEL_INCLUDE) \

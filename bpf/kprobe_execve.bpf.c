@@ -15,25 +15,36 @@ struct {
 
 // 이벤트 데이터 구조체 (사용자 공간으로 전달될 정보)
 struct event {
-    pid_t pid;
+    //pid_t pid;
+    __u32 pid;
     char comm[TASK_COMM_LEN];
     char filename[256]; // execve의 첫 번째 인자 (경로)
 };
 
-SEC("kprobe/sys_execve")
+SEC("kprobe/__x64_sys_execve")
 int BPF_KPROBE(sys_execve_entry, const char *filename, const char *const argv[], const char *const envp[])
 {
-    struct event *e;
-    e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
-    if (!e)
-        return 0;
+    __u64 id;
+    int ret;
 
-    e->pid = bpf_get_current_pid_tgid() >> 32;
-    bpf_get_current_comm(&e->comm, sizeof(e->comm));
-    
-    // filename 인자를 안전하게 복사
-    bpf_probe_read_user_str(&e->filename, sizeof(e->filename), filename);
+    // init event struct
+    struct event event_data = {};
 
-    bpf_ringbuf_submit(e, 0);
+    // get PID
+    id = bpf_get_current_pid_tgid();
+    event_data.pid = id >> 32;
+
+    // get current process name
+    bpf_get_current_comm(&event_data.comm, sizeof(event_data.comm));
+
+    // get execution filename
+    ret = bpf_probe_read_user_str(&event_data.filename, sizeof(event_data.filename), filename);
+    if (ret < 0) {
+        //memcpy(event_data.filename, "<failed>", sizeof("<failed>"));
+	bpf_printk("Failed to read filename: %d\n", ret);
+    }
+
+    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &event_data, sizeof(event_data));
     return 0;
+
 }

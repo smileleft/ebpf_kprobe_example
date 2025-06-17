@@ -10,7 +10,7 @@
 
 // 이벤트 데이터 구조체 (BPF 프로그램의 event 구조체와 동일해야 함)
 struct event {
-    pid_t pid;
+    __u32 pid;
     char comm[16]; // TASK_COMM_LEN은 16
     char filename[256];
 };
@@ -21,6 +21,12 @@ static struct kprobe_execve_bpf *skel;
 static void handle_event(void *ctx, int cpu, void *data, unsigned int data_len)
 {
     const struct event *e = (const struct event *)data;
+
+    // check length of data
+    if (data_len < sizeof(*e)) {
+    	fprintf(stderr, "Received truncated event data (expected %zu, got %u)\n", sizeof(*e), data_len);
+	return;
+    }
     printf("PID: %d, COMM: %s, FILENAME: %s\n", e->pid, e->comm, e->filename);
     //return 0;
 }
